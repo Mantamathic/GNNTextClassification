@@ -27,7 +27,7 @@ def prepData(dataSetString):
     # show a sample of the dataset
     print(dataSet.sample(5))
     # 80-20 splitting the dataset (80%->Training and 20%->Validation), random number for reproducible outcomes
-    return train_test_split(inputAxis, outputAxis, test_size=0.2, random_state=2121)
+    return train_test_split(inputAxis, outputAxis, test_size=0.2, random_state=1234)
 
 
 def generateWordClouds(textAxis):
