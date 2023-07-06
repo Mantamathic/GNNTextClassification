@@ -12,22 +12,21 @@ from spookyAuthorClassifier.src.Utils import utils
 # configure the desired experiment variables
 
 # 'spookyAuthor' or 'movieReview' or 'small'
-dataset = 'spookyAuthor'
+dataset = 'small'
 # leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
 modification = list(['punctuation', 'lemmatize', 'stopwords'])
-modifications.editModifications(modification)
 # 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
-method = 'BOW'
+method = 'TF-IDF'
 
 
 # prepare the dataset
 textTrain, textTest, authorTrain, authorTest = dataPrepper.prepData(dataset)
 
 # apply modifications
-transformer = CountVectorizer(analyzer=modifications.modify).fit(textTrain)
+modifications.editModifications(modification)
 
 # applying the method
-transformedTrain, transformedTest = methods.apply(method, transformer, textTrain, textTest)
+transformedTrain, transformedTest = methods.apply(method, textTrain, textTest)
 
 
 # instantiating the model with Multinomial Naive Bayes..
