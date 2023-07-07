@@ -1,5 +1,8 @@
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from GNNTextClassification.modifications import modifications
+from gensim.models import FastText
+import numpy as np
+
 
 
 def apply(method, textTrain, textTest):
@@ -8,7 +11,7 @@ def apply(method, textTrain, textTest):
     elif method == 'TF-IDF':
         return termFrequencyInverseDocumentFrequency(textTrain, textTest)
     elif method == 'subWord':
-        return subWordEncoding()
+        return subWordEncoding(textTrain, textTest)
     elif method == 'charLevel':
         return characterLevelEncoding()
     elif method == 'embed':
@@ -28,19 +31,46 @@ def bagOfWords(textTrain, textTest):
 
 
 def termFrequencyInverseDocumentFrequency(textTrain, textTest):
-    vectorizer = CountVectorizer(analyzer=modifications.modify)
-    trainCounts = vectorizer.fit_transform(textTrain)
-    testCounts = vectorizer.transform(textTest)
-
-    # Create a TF-IDF transformer to calculate the IDF scores for each word
-    tfidf_transformer = TfidfTransformer()
-    tfIdfTrain = tfidf_transformer.fit_transform(trainCounts)
-    tfIdfTest = tfidf_transformer.transform(testCounts)
+    # Create a TF-IDF vectorizer to calculate the TF-IDF scores for each word
+    vectorizer = TfidfVectorizer(analyzer=modifications.modify)
+    # Fit the vectorizer
+    vectorizer.fit(textTrain)
+    # Transform the training and test text into TF-IDF representations
+    tfIdfTrain = vectorizer.transform(textTrain)
+    tfIdfTest = vectorizer.transform(textTest)
     return tfIdfTrain, tfIdfTest
 
 
-def subWordEncoding():
-    return "null", "null"
+def subWordEncoding(textTrain, textTest, vector_size=100, window=5, min_count=5):
+    # Tokenize the training and test text
+    tokenizedTrain = [modifications.modify(text) for text in textTrain]
+    tokenizedTest = [modifications.modify(text) for text in textTest]
+
+    model = FastText(sentences=tokenizedTrain, vector_size=vector_size, window=window, min_count=min_count)
+
+    # Vectorize the training text
+    subwordVecTrain = []
+    for words in tokenizedTrain:
+        subwords = [model.wv[word] for word in words if word in model.wv]
+        if subwords:
+            subwordVecTrain.append(np.mean(subwords, axis=0))
+        else:
+            subwordVecTrain.append(np.zeros(vector_size))
+
+    subwordVecTrain = np.vstack(subwordVecTrain)
+
+    # Vectorize the test text
+    subwordVecTest = []
+    for words in tokenizedTest:
+        subwords = [model.wv[word] for word in words if word in model.wv]
+        if subwords:
+            subwordVecTest.append(np.mean(subwords, axis=0))
+        else:
+            subwordVecTest.append(np.zeros(vector_size))
+
+    subwordVecTest = np.vstack(subwordVecTest)
+
+    return subwordVecTrain, subwordVecTest
 
 
 def characterLevelEncoding():
