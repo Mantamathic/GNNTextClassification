@@ -17,7 +17,7 @@ def modify(text):
         text = lemmatize(text)
     if 'stopwords' in modifications:
         text = removeStopwords(text)
-    return [word for word in text.split()]
+    return text
 
 
 def removePunctuation(text):

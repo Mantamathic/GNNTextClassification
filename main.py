@@ -2,7 +2,6 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
 
 from GNNTextClassification.dataPrep import dataPrepper
 from GNNTextClassification.methods import methods
@@ -12,31 +11,29 @@ from spookyAuthorClassifier.src.Utils import utils
 # configure the desired experiment variables
 
 # 'spookyAuthor' or 'movieReview' or 'small'
-dataset = 'small'
+dataset = 'spookyAuthor'
 # leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
 modification = list(['punctuation', 'lemmatize', 'stopwords'])
 # 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
-method = 'TF-IDF'
+method = 'subWord'
+# how many characters for the subWords should be used (min, max)
+subWordCharSize = (2, 7)
 
 
 # prepare the dataset
 textTrain, textTest, outputTrain, outputTest = dataPrepper.prepData(dataset)
 
-# apply modifications
+# edit modifications
 modifications.editModifications(modification)
+if method == 'subWord':
+    methods.editSubWordCharSize(subWordCharSize)
 
-# applying the method
+# applying the modifications and the method
 transformedTrain, transformedTest = methods.apply(method, textTrain, textTest)
 
 
 # instantiating the model with Multinomial Naive Bayes..
 model = MultinomialNB()
-
-# Scale the vectors to a non-negative range only needed for naive bayes
-# TODO see if subwordEncoder matrix works for NNs
-scaler = MinMaxScaler()
-transformedTrain = scaler.fit_transform(transformedTrain)
-transformedTest = scaler.transform(transformedTest)
 
 # training the model...
 model = model.fit(transformedTrain, outputTrain)

@@ -1,11 +1,21 @@
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from GNNTextClassification.modifications import modifications
-from gensim.models import FastText
-import numpy as np
 
+subWordCharSize = ()
+
+
+def editSubWordCharSize(newSubWordCharSize):
+    global subWordCharSize
+    subWordCharSize = newSubWordCharSize
 
 
 def apply(method, textTrain, textTest):
+
+    # apply the text modifications first
+    textTrain = [modifications.modify(text) for text in textTrain]
+    textTest = [modifications.modify(text) for text in textTest]
+
+    # apply the methods
     if method == 'BOW':
         return bagOfWords(textTrain, textTest)
     elif method == 'TF-IDF':
@@ -13,7 +23,7 @@ def apply(method, textTrain, textTest):
     elif method == 'subWord':
         return subWordEncoding(textTrain, textTest)
     elif method == 'charLevel':
-        return characterLevelEncoding()
+        return characterLevelEncoding(textTrain, textTest)
     elif method == 'embed':
         return wordEmbedding()
     else:
@@ -22,7 +32,7 @@ def apply(method, textTrain, textTest):
 
 def bagOfWords(textTrain, textTest):
     # Create a count vectorizer to convert the text data into a matrix of word counts
-    bagOfWordsTransformer = CountVectorizer(analyzer=modifications.modify).fit(textTrain)
+    bagOfWordsTransformer = CountVectorizer().fit(textTrain)
     # transforming into Bag-of-Words and hence textual data to numeric
     bagOfWordsTrain = bagOfWordsTransformer.transform(textTrain)
     # transforming into Bag-of-Words and hence textual data to numeric
@@ -32,7 +42,7 @@ def bagOfWords(textTrain, textTest):
 
 def termFrequencyInverseDocumentFrequency(textTrain, textTest):
     # Create a TF-IDF vectorizer to calculate the TF-IDF scores for each word
-    vectorizer = TfidfVectorizer(analyzer=modifications.modify)
+    vectorizer = TfidfVectorizer()
     # Fit the vectorizer
     vectorizer.fit(textTrain)
     # Transform the training and test text into TF-IDF representations
@@ -41,40 +51,24 @@ def termFrequencyInverseDocumentFrequency(textTrain, textTest):
     return tfIdfTrain, tfIdfTest
 
 
-def subWordEncoding(textTrain, textTest, vector_size=100, window=5, min_count=5):
-    # Tokenize the training and test text
-    tokenizedTrain = [modifications.modify(text) for text in textTrain]
-    tokenizedTest = [modifications.modify(text) for text in textTest]
-
-    model = FastText(sentences=tokenizedTrain, vector_size=vector_size, window=window, min_count=min_count)
-
-    # Vectorize the training text
-    subwordVecTrain = []
-    for words in tokenizedTrain:
-        subwords = [model.wv[word] for word in words if word in model.wv]
-        if subwords:
-            subwordVecTrain.append(np.mean(subwords, axis=0))
-        else:
-            subwordVecTrain.append(np.zeros(vector_size))
-
-    subwordVecTrain = np.vstack(subwordVecTrain)
-
-    # Vectorize the test text
-    subwordVecTest = []
-    for words in tokenizedTest:
-        subwords = [model.wv[word] for word in words if word in model.wv]
-        if subwords:
-            subwordVecTest.append(np.mean(subwords, axis=0))
-        else:
-            subwordVecTest.append(np.zeros(vector_size))
-
-    subwordVecTest = np.vstack(subwordVecTest)
-
-    return subwordVecTrain, subwordVecTest
+def subWordEncoding(textTrain, textTest):
+    # Create a subWord vectorizer to convert the text data into a matrix of character counts
+    subWordVectorizer = CountVectorizer(analyzer='char_wb', ngram_range=subWordCharSize).fit(textTrain)
+    # Transforming into subWord encoding and hence textual data to numeric
+    subWordEncodedTrain = subWordVectorizer.transform(textTrain)
+    # Transforming into subWord encoding and hence textual data to numeric
+    subWordEncodedTest = subWordVectorizer.transform(textTest)
+    return subWordEncodedTrain, subWordEncodedTest
 
 
-def characterLevelEncoding():
-    return "null", "null"
+def characterLevelEncoding(textTrain, textTest):
+    # Create a character-level vectorizer to convert the text data into a matrix of character counts
+    charVectorizer = CountVectorizer(analyzer='char', ngram_range=(1, 1)).fit(textTrain)
+    # Transforming into character-level encoding and hence textual data to numeric
+    charEncodedTrain = charVectorizer.transform(textTrain)
+    # Transforming into character-level encoding and hence textual data to numeric
+    charEncodedTest = charVectorizer.transform(textTest)
+    return charEncodedTrain, charEncodedTest
 
 
 def wordEmbedding():
