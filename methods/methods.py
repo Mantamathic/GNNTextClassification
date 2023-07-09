@@ -1,5 +1,7 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from GNNTextClassification.modifications import modifications
+import numpy as np
+from gensim.models import Word2Vec
 
 subWordCharSize = ()
 
@@ -25,7 +27,7 @@ def apply(method, textTrain, textTest):
     elif method == 'charLevel':
         return characterLevelEncoding(textTrain, textTest)
     elif method == 'embed':
-        return wordEmbedding()
+        return wordEmbedding(textTrain, textTest)
     else:
         raise ValueError("Unusable method. Use 'BOW', 'TF-IDF', 'subWord', 'charLevel' or 'embed'")
 
@@ -71,5 +73,33 @@ def characterLevelEncoding(textTrain, textTest):
     return charEncodedTrain, charEncodedTest
 
 
-def wordEmbedding():
-    return "null", "null"
+def wordEmbedding(textTrain, textTest):
+
+    # Train the Word2Vec model
+    model = Word2Vec(sentences=textTrain, seed=1234)
+
+    # Transform the text data to word embeddings
+    embeddingTrain = []
+    embeddingTest = []
+
+    for words in textTrain:
+        embeddings = [model.wv[word] for word in words if word in model.wv]
+        if embeddings:
+            embeddingTrain.append(np.mean(embeddings, axis=0))
+
+    for words in textTest:
+        embeddings = [model.wv[word] for word in words if word in model.wv]
+        if embeddings:
+            embeddingTest.append(np.mean(embeddings, axis=0))
+
+    # Convert the embedding lists to arrays
+    embeddingTrain = np.array(embeddingTrain)
+    embeddingTest = np.array(embeddingTest)
+
+    # Truncate negative values to 2
+    # TODO this is only necessary for the bayes, remove if NN
+    embeddingTrain[embeddingTrain < 0] = 2
+    embeddingTest[embeddingTest < 0] = 2
+
+    return embeddingTrain, embeddingTest
+

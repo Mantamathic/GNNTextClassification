@@ -36,4 +36,6 @@ def lemmatize(text):
 
 
 def removeStopwords(text):
-    return ' '.join([word for word in text.split() if word.lower() not in stopwords.words('english')])
+    words = text.split()
+    filtered_words = [word for word in words if word.lower() not in stopwords.words('english')]
+    return ' '.join(filtered_words) if filtered_words else 'empty'
