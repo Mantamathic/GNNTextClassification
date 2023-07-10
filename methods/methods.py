@@ -11,7 +11,7 @@ def editSubWordCharSize(newSubWordCharSize):
     subWordCharSize = newSubWordCharSize
 
 
-def apply(method, textTrain, textTest):
+def apply(method, textTrain, textTest, network):
 
     # apply the text modifications first
     textTrain = [modifications.modify(text) for text in textTrain]
@@ -27,7 +27,7 @@ def apply(method, textTrain, textTest):
     elif method == 'charLevel':
         return characterLevelEncoding(textTrain, textTest)
     elif method == 'embed':
-        return wordEmbedding(textTrain, textTest)
+        return wordEmbedding(textTrain, textTest, network)
     else:
         raise ValueError("Unusable method. Use 'BOW', 'TF-IDF', 'subWord', 'charLevel' or 'embed'")
 
@@ -73,7 +73,7 @@ def characterLevelEncoding(textTrain, textTest):
     return charEncodedTrain, charEncodedTest
 
 
-def wordEmbedding(textTrain, textTest):
+def wordEmbedding(textTrain, textTest, network):
 
     # Train the Word2Vec model
     model = Word2Vec(sentences=textTrain, seed=1234)
@@ -96,10 +96,10 @@ def wordEmbedding(textTrain, textTest):
     embeddingTrain = np.array(embeddingTrain)
     embeddingTest = np.array(embeddingTest)
 
-    # Truncate negative values to 2
-    # TODO this is only necessary for the bayes, remove if NN
-    embeddingTrain[embeddingTrain < 0] = 2
-    embeddingTest[embeddingTest < 0] = 2
+    # Truncate negative values to 2 if naive Bayes
+    if network == 'naiveBayes':
+        embeddingTrain[embeddingTrain < 0] = 2
+        embeddingTest[embeddingTest < 0] = 2
 
     return embeddingTrain, embeddingTest
 
