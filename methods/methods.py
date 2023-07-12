@@ -1,4 +1,6 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from keras.layers import Conv1D, GlobalMaxPooling1D, Dense, Reshape
+
 from GNNTextClassification.modifications import modifications
 import numpy as np
 from gensim.models import Word2Vec
