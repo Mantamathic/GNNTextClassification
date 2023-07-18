@@ -11,6 +11,7 @@ from GNNTextClassification.dataPrep import dataPrepper
 from GNNTextClassification.methods import methods
 from GNNTextClassification.modifications import modifications
 from GNNTextClassification.networks.convolutional import trainAndEvaluateConvolutional
+from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 from spookyAuthorClassifier.src.Utils import utils
 
 # configure the desired experiment variables
@@ -18,11 +19,11 @@ from spookyAuthorClassifier.src.Utils import utils
 # 'spookyAuthor' or 'movieReview' or 'small'
 dataset = 'spookyAuthor'
 # leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
-modification = list(['punctuation', 'lemmatize', 'stopwords'])
+modification = list([])
 # 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
 method = 'BOW'
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
-network = 'convolutionalNN'
+network = 'graphNN'
 # how many hidden layers to use for the NN
 hiddenLayers = 20
 # how many characters for the subWords should be used (min, max)
@@ -49,7 +50,7 @@ elif network == 'NN':
 elif network == 'convolutionalNN':
     model = models.Sequential()
 elif network == 'graphNN':
-    model = MultinomialNB()
+    print("graphNN")
 else:
     raise ValueError("Unusable network. Use 'naiveBayes'', 'NN', 'convolutionalNN' or 'graphNN'")
 
@@ -70,6 +71,10 @@ if network == 'naiveBayes' or network == 'NN':
     utils.plot_confusion_matrix(cm, classes=[0, 1, 2], normalize=True, title='Confusion Matrix')
 elif network == 'convolutionalNN':
     trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers)
-
+elif network == 'graphNN':
+    if dataset == 'movieReview':
+        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=2)
+    else:
+        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=3)
 # Print the elapsed time
 print("Elapsed time: {:.2f} seconds".format(time.time() - start_time))
