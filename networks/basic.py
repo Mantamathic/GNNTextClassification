@@ -17,12 +17,11 @@ def trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest,
 
     cm = confusion_matrix(outputTest, predictions)
     plt.figure()
-    plot_confusion_matrix(cm, classes=[0, 1, 2], normalize=True, title='Confusion Matrix')
+    plot_confusion_matrix(cm, classes=[0, 1, 2], normalize=True)
 
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
-                          title='Confusion matrix',
                           cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
@@ -37,7 +36,6 @@ def plot_confusion_matrix(cm, classes,
     print(cm)
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=45)
