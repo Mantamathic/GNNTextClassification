@@ -1,8 +1,7 @@
-from wordcloud import WordCloud
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import pandas
-import matplotlib.pyplot as plt
+
 
 
 def prepData(dataSetString):
@@ -29,23 +28,3 @@ def prepData(dataSetString):
     # 80-20 splitting the dataset (80%->Training and 20%->Validation), random number for reproducible outcomes
     return train_test_split(inputAxis, outputAxis, test_size=0.2, random_state=1234)
 
-
-def generateWordClouds(textAxis):
-    wordCloudEAP = WordCloud().generate(textAxis[0])  # for EAP
-    wordCloudHPL = WordCloud().generate(textAxis[1])  # for HPL
-    wordCloudMWS = WordCloud().generate(textAxis[3])  # for MWS
-
-    print(textAxis[0])
-    # print(df['author'][0])
-    plt.imshow(wordCloudEAP, interpolation='bilinear')
-    plt.show()
-
-    print(textAxis[1])
-    # print(df['author'][1])
-    plt.imshow(wordCloudHPL, interpolation='bilinear')
-    plt.show()
-
-    print(textAxis[3])
-    # print(df['author'][3])
-    plt.imshow(wordCloudMWS, interpolation='bilinear')
-    plt.show()
