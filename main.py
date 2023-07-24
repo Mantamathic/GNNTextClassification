@@ -17,7 +17,7 @@ network = 'naiveBayes'
 # 'spookyAuthor' or 'movieReview' or 'small'
 dataset = 'spookyAuthor'
 # 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
-method = 'BOW'
+method = 'embed'
 # leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
 modification = list([])
 # how many hidden layers to use for the NNs

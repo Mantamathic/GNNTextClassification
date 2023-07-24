@@ -1,5 +1,4 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from keras.layers import Conv1D, GlobalMaxPooling1D, Dense, Reshape
 
 from GNNTextClassification.modifications import modifications
 import numpy as np
@@ -14,7 +13,6 @@ def editSubWordCharSize(newSubWordCharSize):
 
 
 def apply(method, textTrain, textTest, network):
-
     # apply the text modifications first
     textTrain = [modifications.modify(text) for text in textTrain]
     textTest = [modifications.modify(text) for text in textTest]
@@ -76,32 +74,24 @@ def characterLevelEncoding(textTrain, textTest):
 
 
 def wordEmbedding(textTrain, textTest, network):
+    # Combine textTrain and textTest to create a unified corpus for training Word2Vec
+    combined_text = textTrain + textTest
+    tokenized_corpus = [text.split() for text in combined_text]
 
-    # Train the Word2Vec model
-    model = Word2Vec(sentences=textTrain, seed=1234)
+    # Train the Word2Vec model on the tokenized_corpus
+    model = Word2Vec(sentences=tokenized_corpus, vector_size=300, window=5, min_count=1, sg=1)
 
-    # Transform the text data to word embeddings
-    embeddingTrain = []
-    embeddingTest = []
+    # Get the word embeddings for each word in the textTrain and textTest data
+    def get_sentence_embedding(text):
+        embeddings = [model.wv[word] if word in model.wv else np.zeros(300) for word in text.split()]
+        return np.mean(embeddings, axis=0)
 
-    for words in textTrain:
-        embeddings = [model.wv[word] for word in words if word in model.wv]
-        if embeddings:
-            embeddingTrain.append(np.mean(embeddings, axis=0))
+    embeddingTrain = np.array([get_sentence_embedding(text) for text in textTrain])
+    embeddingTest = np.array([get_sentence_embedding(text) for text in textTest])
 
-    for words in textTest:
-        embeddings = [model.wv[word] for word in words if word in model.wv]
-        if embeddings:
-            embeddingTest.append(np.mean(embeddings, axis=0))
-
-    # Convert the embedding lists to arrays
-    embeddingTrain = np.array(embeddingTrain)
-    embeddingTest = np.array(embeddingTest)
-
-    # Truncate negative values to 2 if naive Bayes
-    if network == 'naiveBayes':
-        embeddingTrain[embeddingTrain < 0] = 2
-        embeddingTest[embeddingTest < 0] = 2
+    # Truncate to positive values
+    if network == "naiveBayes":
+        embeddingTrain = np.clip(embeddingTrain, 0, None)
+        embeddingTest = np.clip(embeddingTest, 0, None)
 
     return embeddingTrain, embeddingTest
-
