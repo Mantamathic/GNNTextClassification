@@ -75,20 +75,23 @@ def characterLevelEncoding(textTrain, textTest):
 
 
 def wordEmbedding(textTrain, textTest, network, dataSet):
-    vectorSize = 5000
+    vectorSize = 4500
 
-    if dataSet == 'spookyAuthor':
+    if dataSet == 'movieReview':
+        dataSet = pandas.read_csv('../GNNTextClassification/data/movieReview/movieReviewFull.csv')
+        inputAxis = dataSet['text'].tolist()
+        # Combine textTrain and inputAxis to create a unified corpus for training Word2Vec
+        combined_text = inputAxis
+    else:
         dataSet = pandas.read_csv('../GNNTextClassification/data/spookyAuthor/additional.csv')
         inputAxis = dataSet['text'].tolist()
         # Combine textTrain and inputAxis to create a unified corpus for training Word2Vec
         combined_text = textTrain + inputAxis
-    else:
-        combined_text = textTrain
 
     tokenized_corpus = [text.split() for text in combined_text]
 
     # Train the Word2Vec model on the tokenized_corpus
-    model = Word2Vec(sentences=tokenized_corpus, vector_size=vectorSize, window=20, min_count=4, sg=1)
+    model = Word2Vec(sentences=tokenized_corpus, vector_size=vectorSize, window=16, min_count=1, sg=1)
 
     # Get the word embeddings for each word in the textTrain and textTest data
     def get_sentence_embedding(text):

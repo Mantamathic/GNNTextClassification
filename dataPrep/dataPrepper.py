@@ -3,7 +3,6 @@ from sklearn.preprocessing import LabelEncoder
 import pandas
 
 
-
 def prepData(dataSetString):
     if dataSetString == 'spookyAuthor':
         dataSet = pandas.read_csv('../GNNTextClassification/data/spookyAuthor/spookyAuthor.csv')
