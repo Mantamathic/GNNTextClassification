@@ -3,6 +3,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from GNNTextClassification.modifications import modifications
 import numpy as np
 from gensim.models import Word2Vec
+import pandas
 
 subWordCharSize = ()
 
@@ -12,7 +13,7 @@ def editSubWordCharSize(newSubWordCharSize):
     subWordCharSize = newSubWordCharSize
 
 
-def apply(method, textTrain, textTest, network):
+def apply(method, textTrain, textTest, network, dataset):
     # apply the text modifications first
     textTrain = [modifications.modify(text) for text in textTrain]
     textTest = [modifications.modify(text) for text in textTest]
@@ -27,7 +28,7 @@ def apply(method, textTrain, textTest, network):
     elif method == 'charLevel':
         return characterLevelEncoding(textTrain, textTest)
     elif method == 'embed':
-        return wordEmbedding(textTrain, textTest, network)
+        return wordEmbedding(textTrain, textTest, network, dataset)
     else:
         raise ValueError("Unusable method. Use 'BOW', 'TF-IDF', 'subWord', 'charLevel' or 'embed'")
 
@@ -73,17 +74,25 @@ def characterLevelEncoding(textTrain, textTest):
     return charEncodedTrain, charEncodedTest
 
 
-def wordEmbedding(textTrain, textTest, network):
-    # Combine textTrain and textTest to create a unified corpus for training Word2Vec
-    combined_text = textTrain + textTest
+def wordEmbedding(textTrain, textTest, network, dataSet):
+    vectorSize = 5000
+
+    if dataSet == 'spookyAuthor':
+        dataSet = pandas.read_csv('../GNNTextClassification/data/spookyAuthor/additional.csv')
+        inputAxis = dataSet['text'].tolist()
+        # Combine textTrain and inputAxis to create a unified corpus for training Word2Vec
+        combined_text = textTrain + inputAxis
+    else:
+        combined_text = textTrain
+
     tokenized_corpus = [text.split() for text in combined_text]
 
     # Train the Word2Vec model on the tokenized_corpus
-    model = Word2Vec(sentences=tokenized_corpus, vector_size=300, window=5, min_count=1, sg=1)
+    model = Word2Vec(sentences=tokenized_corpus, vector_size=vectorSize, window=20, min_count=4, sg=1)
 
     # Get the word embeddings for each word in the textTrain and textTest data
     def get_sentence_embedding(text):
-        embeddings = [model.wv[word] if word in model.wv else np.zeros(300) for word in text.split()]
+        embeddings = [model.wv[word] if word in model.wv else np.zeros(vectorSize) for word in text.split()]
         return np.mean(embeddings, axis=0)
 
     embeddingTrain = np.array([get_sentence_embedding(text) for text in textTrain])

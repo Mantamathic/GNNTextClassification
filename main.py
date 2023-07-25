@@ -36,7 +36,7 @@ if method == 'subWord':
     methods.editSubWordCharSize(subWordCharSize)
 
 # applying the modifications and the method
-transformedTrain, transformedTest = methods.apply(method, textTrain, textTest, network)
+transformedTrain, transformedTest = methods.apply(method, textTrain, textTest, network, dataset)
 
 # instantiating model
 if network == 'naiveBayes':
