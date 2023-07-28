@@ -7,16 +7,19 @@ from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 
 
-def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers):
+def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method):
+    if method != 'embed':
+        transformedTrain = transformedTrain.toarray()
+        transformedTest = transformedTest.toarray()
 
-    transformedTrain = transformedTrain.toarray()
-    transformedTest = transformedTest.toarray()
+    # BOW: 25000/1
+    max_sequence_length = 25000
+    padding_value = 1
 
-    max_sequence_length = 1155
-    padding_value = 0
-
-    padded_train = tf.keras.preprocessing.sequence.pad_sequences(transformedTrain, maxlen=max_sequence_length, padding='post', value=padding_value)
-    padded_test = tf.keras.preprocessing.sequence.pad_sequences(transformedTest, maxlen=max_sequence_length, padding='post', value=padding_value)
+    padded_train = tf.keras.preprocessing.sequence.pad_sequences(transformedTrain, maxlen=max_sequence_length,
+                                                                 padding='post', value=padding_value)
+    padded_test = tf.keras.preprocessing.sequence.pad_sequences(transformedTest, maxlen=max_sequence_length,
+                                                                padding='post', value=padding_value)
 
     padded_train = np.expand_dims(padded_train, axis=2)
     padded_test = np.expand_dims(padded_test, axis=2)
@@ -69,7 +72,6 @@ def plotConfusionMatrix(cm, classes,
                         normalize=False,
                         title='Confusion matrix',
                         cmap=plt.cm.Blues):
-
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")

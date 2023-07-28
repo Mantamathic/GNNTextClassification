@@ -13,11 +13,11 @@ from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 # configure the desired experiment variables
 
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
-network = 'NN'
+network = 'convolutionalNN'
 # 'spookyAuthor' or 'movieReview' or 'small'
-dataset = 'movieReview'
+dataset = 'spookyAuthor'
 # 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
-method = 'BOW'
+method = 'embed'
 # leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
 modification = list([])
 # how many hidden layers to use for the NNs
@@ -38,7 +38,7 @@ if method == 'subWord':
 # applying the modifications and the method
 transformedTrain, transformedTest = methods.apply(method, textTrain, textTest, network, dataset)
 
-# instantiating model
+# instantiating model, training and evaluating
 if network == 'naiveBayes':
     model = MultinomialNB()
     trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest, outputTest)
@@ -47,7 +47,7 @@ elif network == 'NN':
     trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest, outputTest)
 elif network == 'convolutionalNN':
     model = models.Sequential()
-    trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers)
+    trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method)
 elif network == 'graphNN':
     if dataset == 'movieReview':
         trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=2)
