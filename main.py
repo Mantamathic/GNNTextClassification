@@ -13,13 +13,13 @@ from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 # configure the desired experiment variables
 
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
-network = 'convolutionalNN'
+network = 'naiveBayes'
 # 'spookyAuthor' or 'movieReview' or 'small'
 dataset = 'spookyAuthor'
-# 'BOW' or 'TF-IDF' or 'subWord' or 'charLevel' or 'embed'
-method = 'embed'
-# leave empty and/or 'punctuation' and/or 'lemmatize' and/or 'stopwords'
-modification = list([])
+# 'BOW' or 'TF-IDF' or 'charLevel' or 'subWord' or 'embed'
+method = 'BOW'
+# 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs and/or 'adjectives'
+modification = list([""])
 # how many hidden layers to use for the NNs
 hiddenLayers = 20
 # how many characters for the subWords should be used (min, max)

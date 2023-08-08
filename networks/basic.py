@@ -17,7 +17,7 @@ def trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest,
 
     cm = confusion_matrix(outputTest, predictions)
     plt.figure()
-    plot_confusion_matrix(cm, classes=[0, 1, 2], normalize=True)
+    plot_confusion_matrix(cm, classes=[0, 1, 2], normalize=False)
 
 
 def plot_confusion_matrix(cm, classes,
