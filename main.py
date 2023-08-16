@@ -13,17 +13,17 @@ from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 # configure the desired experiment variables
 
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
-network = 'naiveBayes'
+network = 'convolutionalNN'
 # 'spookyAuthor' or 'movieReview' or 'small'
 dataset = 'spookyAuthor'
 # 'BOW' or 'TF-IDF' or 'charLevel' or 'subWord' or 'embed'
 method = 'BOW'
-# 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs and/or 'adjectives'
-modification = list([""])
+# 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs' and/or 'adjectives'
+modification = list([])
 # how many hidden layers to use for the NNs
-hiddenLayers = 20
+hiddenLayers = 1
 # how many characters for the subWords should be used (min, max)
-subWordCharSize = (4, 8)
+subWordCharSize = (3, 3)
 
 start_time = time.time()
 
@@ -43,11 +43,11 @@ if network == 'naiveBayes':
     model = MultinomialNB()
     trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest, outputTest)
 elif network == 'NN':
-    model = MLPClassifier(hidden_layer_sizes=(hiddenLayers,), max_iter=1000)
+    model = MLPClassifier(hidden_layer_sizes=(hiddenLayers,), max_iter=1500)
     trainAndEvaluateBasic(model, transformedTrain, outputTrain, transformedTest, outputTest)
 elif network == 'convolutionalNN':
     model = models.Sequential()
-    trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method)
+    trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method, hiddenLayers)
 elif network == 'graphNN':
     if dataset == 'movieReview':
         trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=2)

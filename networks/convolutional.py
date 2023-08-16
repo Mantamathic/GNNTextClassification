@@ -7,7 +7,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 
 
-def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method):
+def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method, hiddenLayers):
     if method != 'embed':
         transformedTrain = transformedTrain.toarray()
         transformedTest = transformedTest.toarray()
@@ -15,20 +15,22 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
     # BOW: 25000/1
     max_sequence_length = 25000
     padding_value = 1
+    padding = "post"
+    epochs = 5
 
     padded_train = tf.keras.preprocessing.sequence.pad_sequences(transformedTrain, maxlen=max_sequence_length,
-                                                                 padding='post', value=padding_value)
+                                                                 padding=padding, value=padding_value)
     padded_test = tf.keras.preprocessing.sequence.pad_sequences(transformedTest, maxlen=max_sequence_length,
-                                                                padding='post', value=padding_value)
+                                                                padding=padding, value=padding_value)
 
     padded_train = np.expand_dims(padded_train, axis=2)
     padded_test = np.expand_dims(padded_test, axis=2)
 
     model.add(layers.Conv1D(10, 3, activation='relu', input_shape=(max_sequence_length, 1)))
-    model.add(layers.MaxPooling1D(2))
-    model.add(layers.Conv1D(10, 3, activation='relu'))
-    model.add(layers.MaxPooling1D(2))
-    model.add(layers.Conv1D(10, 3, activation='relu'))
+
+    for _ in range(hiddenLayers - 1):
+        model.add(layers.MaxPooling1D(2))
+        model.add(layers.Conv1D(10, 3, activation='relu'))
 
     model.add(layers.Flatten())
     model.add(layers.Dense(64, activation='relu'))
@@ -38,7 +40,7 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
 
-    history = model.fit(padded_train, outputTrain, epochs=5,
+    history = model.fit(padded_train, outputTrain, epochs=epochs,
                         validation_data=(padded_test, outputTest))
 
     plt.plot(history.history['accuracy'], label='accuracy')
@@ -65,7 +67,7 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
 
     cm = confusion_matrix(outputTest, np.argmax(predictions, axis=1))
     plt.figure()
-    plotConfusionMatrix(cm, classes=[0, 1, 2], normalize=True, title='Confusion Matrix')
+    plotConfusionMatrix(cm, classes=[0, 1, 2], normalize=False, title='Confusion Matrix')
 
 
 def plotConfusionMatrix(cm, classes,
