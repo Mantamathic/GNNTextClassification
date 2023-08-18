@@ -13,8 +13,8 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
         transformedTest = transformedTest.toarray()
 
     # BOW: 25000/1
-    max_sequence_length = 25000
-    padding_value = 1
+    max_sequence_length = 138
+    padding_value = 3
     padding = "post"
     epochs = 5
 
@@ -23,10 +23,8 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
     padded_test = tf.keras.preprocessing.sequence.pad_sequences(transformedTest, maxlen=max_sequence_length,
                                                                 padding=padding, value=padding_value)
 
-    padded_train = np.expand_dims(padded_train, axis=2)
-    padded_test = np.expand_dims(padded_test, axis=2)
-
-    model.add(layers.Conv1D(10, 3, activation='relu', input_shape=(max_sequence_length, 1)))
+    # This value is the vectorsize from the embed method
+    model.add(layers.Conv1D(10, 3, activation='relu', input_shape=(padded_train.shape[1], 15)))
 
     for _ in range(hiddenLayers - 1):
         model.add(layers.MaxPooling1D(2))

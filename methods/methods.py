@@ -49,8 +49,8 @@ def termFrequencyInverseDocumentFrequency(textTrain, textTest):
     # Fit the vectorizer
     vectorizer.fit(textTrain)
     # Transform the training and test text into TF-IDF representations
-    tfIdfTrain = vectorizer.transform(textTrain)
-    tfIdfTest = vectorizer.transform(textTest)
+    tfIdfTrain = vectorizer.transform(textTrain) * 10
+    tfIdfTest = vectorizer.transform(textTest) * 10
     return tfIdfTrain, tfIdfTest
 
 
@@ -75,7 +75,8 @@ def characterLevelEncoding(textTrain, textTest):
 
 
 def wordEmbedding(textTrain, textTest, network, dataSet):
-    vectorSize = 4500
+    # for the CNN, this value also needs to be adjusted
+    vectorSize = 15
 
     if dataSet == 'movieReview':
         dataSet = pandas.read_csv('../GNNTextClassification/data/movieReview/movieReviewFull.csv')
@@ -91,19 +92,24 @@ def wordEmbedding(textTrain, textTest, network, dataSet):
     tokenized_corpus = [text.split() for text in combined_text]
 
     # Train the Word2Vec model on the tokenized_corpus
-    model = Word2Vec(sentences=tokenized_corpus, vector_size=vectorSize, window=16, min_count=1, sg=1)
+    model = Word2Vec(sentences=tokenized_corpus, vector_size=vectorSize, window=14, min_count=1, sg=1)
 
     # Get the word embeddings for each word in the textTrain and textTest data
     def get_sentence_embedding(text):
         embeddings = [model.wv[word] if word in model.wv else np.zeros(vectorSize) for word in text.split()]
-        return np.mean(embeddings, axis=0)
+        return embeddings  # Return a sequence of word embeddings
 
-    embeddingTrain = np.array([get_sentence_embedding(text) for text in textTrain])
-    embeddingTest = np.array([get_sentence_embedding(text) for text in textTest])
+    # Create sequences of word embeddings for training and testing data
+    sequencesTrain = [get_sentence_embedding(text) for text in textTrain]
+    sequencesTest = [get_sentence_embedding(text) for text in textTest]
+
+    # Convert the sequences to numpy arrays
+    sequencesTrain = np.array(sequencesTrain, dtype=object)
+    sequencesTest = np.array(sequencesTest, dtype=object)
 
     # Truncate to positive values
     if network == "naiveBayes":
-        embeddingTrain = np.clip(embeddingTrain, 0, None)
-        embeddingTest = np.clip(embeddingTest, 0, None)
+        sequencesTrain = np.clip(sequencesTrain, 0, None)
+        sequencesTest = np.clip(sequencesTest, 0, None)
+    return sequencesTrain, sequencesTest
 
-    return embeddingTrain, embeddingTest

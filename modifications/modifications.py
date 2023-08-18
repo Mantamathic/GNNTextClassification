@@ -55,7 +55,7 @@ def removeAdjectives(text):
     # nltk.download('averaged_perceptron_tagger')
     tagged_words = pos_tag(text.split())
     filtered_words = [word for word, pos in tagged_words if pos != 'JJ']  # JJ represents adjectives in NLTK POS tagging
-    #print(' '.join(filtered_words) if filtered_words else 'empty')
+    # print(' '.join(filtered_words) if filtered_words else 'empty')
     return ' '.join(filtered_words) if filtered_words else 'empty'
 
 
@@ -63,7 +63,7 @@ def removeVerbs(text):
     words = word_tokenize(text)
     pos_tags = pos_tag(words)
     filtered_words = [word for word, pos in pos_tags if pos not in ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']]
-    #print(' '.join(filtered_words))
+    # print(' '.join(filtered_words))
     return ' '.join(filtered_words)
 
 
@@ -71,5 +71,5 @@ def removeNouns(text):
     words = word_tokenize(text)
     pos_tags = pos_tag(words)
     filtered_words = [word for word, pos in pos_tags if pos not in ['NN', 'NNS', 'NNP', 'NNPS']]
-    #print(' '.join(filtered_words))
+    # print(' '.join(filtered_words))
     return ' '.join(filtered_words)
