@@ -13,7 +13,7 @@ from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 # configure the desired experiment variables
 
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
-network = 'convolutionalNN'
+network = 'graphNN'
 # 'spookyAuthor' or 'movieReview' or 'small'
 dataset = 'movieReview'
 # 'BOW' or 'TF-IDF' or 'charLevel' or 'subWord' or 'embed'
@@ -21,9 +21,9 @@ method = 'embed'
 # 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs' and/or 'adjectives'
 modification = list([])
 # how many hidden layers to use for the NNs
-hiddenLayers = 2
+hiddenLayers = 27
 # how many characters for the subWords should be used (min, max)
-subWordCharSize = (3, 3)
+subWordCharSize = (4, 6)
 
 start_time = time.time()
 
@@ -50,9 +50,9 @@ elif network == 'convolutionalNN':
     trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method, hiddenLayers)
 elif network == 'graphNN':
     if dataset == 'movieReview':
-        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=2)
+        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, method=method, num_classes=2)
     else:
-        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes=3)
+        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, method=method, num_classes=3)
 else:
     raise ValueError("Unusable network. Use 'naiveBayes'', 'NN', 'convolutionalNN' or 'graphNN'")
 

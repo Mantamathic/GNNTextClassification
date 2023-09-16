@@ -1,133 +1,143 @@
 from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
+import torch.nn as nn
 import torch
-from gensim import corpora
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import itertools
-from sklearn.manifold import TSNE
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics.pairwise import cosine_similarity
+import torch_geometric.transforms as T
+from torch_geometric.data import Data
 
 
-class GCN(torch.nn.Module):
-    def __init__(self, hidden_channels, num_features, num_classes):
-        super().__init__()
-        torch.manual_seed(11)
-        self.conv1 = GCNConv(num_features, hidden_channels)
-        self.conv2 = GCNConv(hidden_channels, hidden_channels)
-        self.conv3 = GCNConv(hidden_channels, num_classes)
+def trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes, method):
+    if method == 'embed':
+        documents = []
+        for document_embeddings in transformedTrain:
+            doc_embedding = np.mean(document_embeddings, axis=0)
+            documents.append(doc_embedding)
 
-    def forward(self, x, edge_index):
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, p=0.5, training=self.training)
-        x = self.conv3(x, edge_index)
-        x = torch.relu(x)
-        return x
+        transformedTrainSim = np.array(documents)
 
+        similarity_matrix = cosine_similarity(transformedTrainSim)
 
-def visualize(h, color):
-    z = TSNE(n_components=2).fit_transform(h.detach().cpu().numpy())
+        num_documents = len(transformedTrain)
+        num_words = transformedTrainSim.shape[1]
 
-    plt.figure(figsize=(10, 10))
-    plt.xticks([])
-    plt.yticks([])
+        doc_embeddings = [np.sum(embeddings, axis=0) for embeddings in transformedTrain]
+        x = torch.tensor(np.array(doc_embeddings), dtype=torch.float)
+        x = x.view(num_documents, -1)
+    else:
+        num_documents, num_words = transformedTrain.shape
+        similarity_matrix = cosine_similarity(transformedTrain)
+        x = torch.tensor(transformedTrain.toarray(), dtype=torch.float)
 
-    plt.scatter(z[:, 0], z[:, 1], s=70, c=color, cmap="Set2")
-    plt.show()
-
-
-def trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes):
-    # Convert the sparse matrix to a dense matrix
-    transformedTrain_dense = transformedTrain.toarray()
-
-    # Convert the dense matrix to a list of documents
-    documents = [[str(word) for word in document] for document in transformedTrain_dense]
-
-    # Create a dictionary
-    dictionary = corpora.Dictionary(documents)
+    y_train = torch.tensor(outputTrain, dtype=torch.long)
 
     # Create an empty graph
     graph = nx.Graph()
 
-    # Add nodes to the graph using the word indices from the dictionary
-    for words in documents:
-        indices = [dictionary.token2id[word] for word in words]
-        graph.add_nodes_from(indices)
+    for i in range(num_documents):
+        label = outputTrain[i]
+        graph.add_node(label)
 
-    # Add edges to the graph based on the window size
-    window_size = 5
-    for words in documents:
-        indices = [dictionary.token2id[word] for word in words]
-        for i, word in enumerate(indices):
-            start = max(0, i - window_size)
-            end = min(len(indices), i + window_size + 1)
-            for j in range(start, end):
-                if j != i:
-                    graph.add_edge(word, indices[j])
+    threshold = 0.99
+    # Build the edge_index using consecutive integer indices
+    edges_to_add = []
+    for i in range(num_documents):
+        for j in range(i + 1, num_documents):
+            if similarity_matrix[i, j] > threshold:
+                edges_to_add.append((i, j))
 
-    # Now you have the graph object to use in your further processing
+    graph.add_edges_from(edges_to_add)
 
-    # Example usage: get the adjacency matrix as a NumPy array
-    adj_matrix = nx.to_numpy_array(graph)
+    # Visualization
+    # plt.figure(figsize=(9, 7))
+    # y = torch.tensor(outputTrain, dtype=torch.long)
+    # nx.draw_spring(graph, node_size=30, arrows=False, node_color=y)
+    # plt.show()
 
-    num_features = transformedTrain.shape[1]
-    model = GCN(hidden_channels=hiddenLayers, num_features=num_features, num_classes=num_classes)
-    model.eval()
+    # Convert networkx graph to PyTorch Geometric Data object
+    edge_index = torch.tensor(list(graph.edges)).t().contiguous()
+    data = Data(x=x, edge_index=edge_index, y=y_train)
 
-    x = torch.tensor(transformedTrain.toarray(), dtype=torch.float)
-    edge_index = torch.tensor(np.array(adj_matrix.nonzero()), dtype=torch.long)
-    y = torch.tensor(outputTrain, dtype=torch.long)
+    # Apply RandomNodeSplit transform to the Data object
+    split = T.RandomNodeSplit(num_val=0.1, num_test=0.2)
+    data = split(data)
 
-    out = model(x, edge_index)
+    # Print the resulting Data object (optional)
+    print(data)
 
-    visualize(out, color=y)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gcn = GCN(num_features=num_words, num_classes=num_classes, hiddenLayers=hiddenLayers).to(device)
+    optimizer_gcn = torch.optim.Adam(gcn.parameters(), lr=0.01, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
+    gcn = train_node_classifier(gcn, data, optimizer_gcn, criterion, n_epochs=1000)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.000001)
-    criterion = torch.nn.CrossEntropyLoss()
+    test_acc = eval_node_classifier(gcn, data, data.test_mask)
+    print(f'Test Acc: {test_acc:.3f}')
 
-    mask_train = torch.tensor(outputTrain, dtype=torch.long)
-    mask_test = torch.tensor(outputTest, dtype=torch.long)
+    # Getting the predictions for the test set
+    with torch.no_grad():
+        gcn.eval()
+        out_test = gcn(data)[data.test_mask].argmax(dim=1)
+        y_true = data.y[data.test_mask]  # Get the true labels for the test set
 
-    def train():
+    # Getting the Precision, Recall, F1-Score
+    print(classification_report(y_true, out_test))
+    cm = confusion_matrix(y_true, out_test)
+
+    plotConfusionMatrix(cm, classes=np.unique(y_true), normalize=False, title='Confusion Matrix')
+
+
+def train_node_classifier(model, graph, optimizer, criterion, n_epochs=100):
+
+    for epoch in range(1, n_epochs + 1):
         model.train()
         optimizer.zero_grad()
-        out = model(x, edge_index)
-        loss = criterion(out[mask_train], y[mask_train])
+        out = model(graph)
+        loss = criterion(out[graph.train_mask], graph.y[graph.train_mask])
         loss.backward()
         optimizer.step()
-        return loss
 
-    def test():
-        model.eval()
-        out = model(x, edge_index)
         pred = out.argmax(dim=1)
-        test_correct = pred[mask_test] == y[mask_test]
-        test_acc = int(test_correct.sum()) / len(outputTest)
-        return test_acc
+        acc = eval_node_classifier(model, graph, graph.val_mask)
 
-    for epoch in range(1, 101):
-        loss = train()
-        print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
+        if epoch % 10 == 0:
+            print(f'Epoch: {epoch:03d}, Train Loss: {loss:.3f}, Val Acc: {acc:.3f}')
 
-    test_acc = test()
-    print(f'Test Accuracy: {test_acc:.4f}')
+    return model
+
+
+def eval_node_classifier(model, graph, mask):
 
     model.eval()
-    out_test = model(torch.tensor(transformedTest.toarray(), dtype=torch.float), edge_index)
-    visualize(out_test, color=torch.tensor(outputTest, dtype=torch.long))
+    pred = model(graph).argmax(dim=1)
+    correct = (pred[mask] == graph.y[mask]).sum()
+    acc = int(correct) / int(mask.sum())
 
-    # Getting the predictions of the Validation Set
-    out_test = out_test.argmax(dim=1)
-    # Getting the Precision, Recall, F1-Score
-    print(classification_report(outputTest, out_test))
-    cm = confusion_matrix(outputTest, out_test)
-    plt.figure()
-    plotConfusionMatrix(cm, classes=[0, 1, 2], normalize=True, title='Confusion Matrix')
+    return acc
+
+
+class GCN(torch.nn.Module):
+    def __init__(self, num_features, num_classes, hiddenLayers):
+        super().__init__()
+        self.conv1 = GCNConv(num_features, hiddenLayers)
+        self.conv2 = GCNConv(hiddenLayers, 9)
+        self.conv3 = GCNConv(9, num_classes)
+
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+
+        x = self.conv1(x, edge_index)
+        x = torch.tanh(x)
+        x = self.conv2(x, edge_index)
+        x = F.relu(x)
+        output = self.conv3(x, edge_index)
+
+        return output
 
 
 def plotConfusionMatrix(cm, classes,
@@ -163,4 +173,3 @@ def plotConfusionMatrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
-
