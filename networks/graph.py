@@ -1,5 +1,4 @@
 from torch_geometric.nn import GCNConv
-import torch.nn.functional as F
 import torch.nn as nn
 import torch
 import numpy as np
@@ -12,7 +11,7 @@ import torch_geometric.transforms as T
 from torch_geometric.data import Data
 
 
-def trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, num_classes, method):
+def trainAndEvaluateGraph(transformedTrain, outputTrain, hiddenLayers, num_classes, method):
     if method == 'embed':
         documents = []
         for document_embeddings in transformedTrain:
@@ -83,7 +82,7 @@ def trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, output
     with torch.no_grad():
         gcn.eval()
         out_test = gcn(data)[data.test_mask].argmax(dim=1)
-        y_true = data.y[data.test_mask]  # Get the true labels for the test set
+        y_true = data.y[data.test_mask]
 
     # Getting the Precision, Recall, F1-Score
     print(classification_report(y_true, out_test))
@@ -125,8 +124,9 @@ class GCN(torch.nn.Module):
     def __init__(self, num_features, num_classes, hiddenLayers):
         super().__init__()
         self.conv1 = GCNConv(num_features, hiddenLayers)
-        self.conv2 = GCNConv(hiddenLayers, 9)
-        self.conv3 = GCNConv(9, num_classes)
+        self.conv2 = GCNConv(hiddenLayers, 100)
+        self.conv3 = GCNConv(100, 27)
+        self.conv4 = GCNConv(27, num_classes)
 
     def forward(self, data):
         x, edge_index = data.x, data.edge_index
@@ -134,8 +134,10 @@ class GCN(torch.nn.Module):
         x = self.conv1(x, edge_index)
         x = torch.tanh(x)
         x = self.conv2(x, edge_index)
-        x = F.relu(x)
-        output = self.conv3(x, edge_index)
+        x = torch.relu(x)
+        x = self.conv3(x, edge_index)
+        x = torch.relu(x)
+        output = self.conv4(x, edge_index)
 
         return output
 

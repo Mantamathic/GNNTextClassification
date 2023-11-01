@@ -2,7 +2,6 @@ import numpy as np
 import itertools
 import tensorflow as tf
 from keras import layers
-
 from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 
@@ -12,8 +11,7 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
         transformedTrain = transformedTrain.toarray()
         transformedTest = transformedTest.toarray()
 
-    # BOW: 25000/1
-    max_sequence_length = 138
+    max_sequence_length = None
     padding_value = 3
     padding = "post"
     epochs = 5
@@ -23,8 +21,8 @@ def trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outp
     padded_test = tf.keras.preprocessing.sequence.pad_sequences(transformedTest, maxlen=max_sequence_length,
                                                                 padding=padding, value=padding_value)
 
-    # This value is the vectorsize from the embed method
-    model.add(layers.Conv1D(10, 3, activation='relu', input_shape=(padded_train.shape[1], 15)))
+    # The last value is the vectorsize from the embed method, otherwise 1
+    model.add(layers.Conv1D(10, 3, activation='relu', input_shape=(padded_train.shape[1], 1)))
 
     for _ in range(hiddenLayers - 1):
         model.add(layers.MaxPooling1D(2))

@@ -15,13 +15,13 @@ from GNNTextClassification.networks.graph import trainAndEvaluateGraph
 # 'naiveBayes' or 'NN' or 'convolutionalNN' or 'graphNN'
 network = 'graphNN'
 # 'spookyAuthor' or 'movieReview' or 'small'
-dataset = 'movieReview'
+dataset = 'spookyAuthor'
 # 'BOW' or 'TF-IDF' or 'charLevel' or 'subWord' or 'embed'
 method = 'embed'
-# 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs' and/or 'adjectives'
-modification = list([])
+# 'punctuation' and/or 'lemmatize' and/or 'stopwords' and/or 'nouns' and/or 'verbs' and/or 'adjectives' to remove
+modification = list(['punctuation', 'lemmatize', 'stopwords', 'nouns', 'verbs', 'adjectives'])
 # how many hidden layers to use for the NNs
-hiddenLayers = 27
+hiddenLayers = 1
 # how many characters for the subWords should be used (min, max)
 subWordCharSize = (4, 6)
 
@@ -50,9 +50,9 @@ elif network == 'convolutionalNN':
     trainAndEvaluateConvolutional(model, transformedTrain, transformedTest, outputTrain, outputTest, method, hiddenLayers)
 elif network == 'graphNN':
     if dataset == 'movieReview':
-        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, method=method, num_classes=2)
+        trainAndEvaluateGraph(transformedTrain, outputTrain, hiddenLayers, method=method, num_classes=2)
     else:
-        trainAndEvaluateGraph(transformedTrain, transformedTest, outputTrain, outputTest, hiddenLayers, method=method, num_classes=3)
+        trainAndEvaluateGraph(transformedTrain, outputTrain, hiddenLayers, method=method, num_classes=3)
 else:
     raise ValueError("Unusable network. Use 'naiveBayes'', 'NN', 'convolutionalNN' or 'graphNN'")
 

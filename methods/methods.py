@@ -38,7 +38,6 @@ def bagOfWords(textTrain, textTest):
     bagOfWordsTransformer = CountVectorizer().fit(textTrain)
     # transforming into Bag-of-Words and hence textual data to numeric
     bagOfWordsTrain = bagOfWordsTransformer.transform(textTrain)
-    # transforming into Bag-of-Words and hence textual data to numeric
     bagOfWordsTextTest = bagOfWordsTransformer.transform(textTest)
     return bagOfWordsTrain, bagOfWordsTextTest
 
@@ -48,9 +47,9 @@ def termFrequencyInverseDocumentFrequency(textTrain, textTest):
     vectorizer = TfidfVectorizer()
     # Fit the vectorizer
     vectorizer.fit(textTrain)
-    # Transform the training and test text into TF-IDF representations
-    tfIdfTrain = vectorizer.transform(textTrain) * 10
-    tfIdfTest = vectorizer.transform(textTest) * 10
+    # Transform the training and test text into TF-IDF representations (use *10 against dying ReLu)
+    tfIdfTrain = vectorizer.transform(textTrain)
+    tfIdfTest = vectorizer.transform(textTest)
     return tfIdfTrain, tfIdfTest
 
 
@@ -59,7 +58,6 @@ def subWordEncoding(textTrain, textTest):
     subWordVectorizer = CountVectorizer(analyzer='char_wb', ngram_range=subWordCharSize).fit(textTrain)
     # Transforming into subWord encoding and hence textual data to numeric
     subWordEncodedTrain = subWordVectorizer.transform(textTrain)
-    # Transforming into subWord encoding and hence textual data to numeric
     subWordEncodedTest = subWordVectorizer.transform(textTest)
     return subWordEncodedTrain, subWordEncodedTest
 
@@ -69,7 +67,6 @@ def characterLevelEncoding(textTrain, textTest):
     charVectorizer = CountVectorizer(analyzer='char', ngram_range=(1, 1)).fit(textTrain)
     # Transforming into character-level encoding and hence textual data to numeric
     charEncodedTrain = charVectorizer.transform(textTrain)
-    # Transforming into character-level encoding and hence textual data to numeric
     charEncodedTest = charVectorizer.transform(textTest)
     return charEncodedTrain, charEncodedTest
 
@@ -97,7 +94,7 @@ def wordEmbedding(textTrain, textTest, network, dataSet):
     # Get the word embeddings for each word in the textTrain and textTest data
     def get_sentence_embedding(text):
         embeddings = [model.wv[word] if word in model.wv else np.zeros(vectorSize) for word in text.split()]
-        return embeddings  # Return a sequence of word embeddings
+        return embeddings
 
     # Create sequences of word embeddings for training and testing data
     sequencesTrain = [get_sentence_embedding(text) for text in textTrain]

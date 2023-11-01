@@ -2,7 +2,6 @@ import numpy as np
 import itertools
 import tensorflow as tf
 from keras import layers
-
 from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split

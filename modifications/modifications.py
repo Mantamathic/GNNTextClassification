@@ -2,7 +2,6 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 import string
 from nltk import pos_tag
-import nltk
 from nltk.tokenize import word_tokenize
 
 
@@ -72,4 +71,6 @@ def removeNouns(text):
     pos_tags = pos_tag(words)
     filtered_words = [word for word, pos in pos_tags if pos not in ['NN', 'NNS', 'NNP', 'NNPS']]
     # print(' '.join(filtered_words))
+    if not filtered_words:
+        return "qq"
     return ' '.join(filtered_words)
