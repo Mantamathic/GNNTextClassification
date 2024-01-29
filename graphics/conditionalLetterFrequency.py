@@ -1,34 +1,54 @@
 import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder
+from collections import Counter
 
-dataSet = pd.read_csv('../../GNNTextClassification/data/spookyAuthor/spookyAuthor.csv')
-labelEncoder = LabelEncoder()
-dataSet['author_encoded'] = labelEncoder.fit_transform(dataSet['author'])
+# Read the dataset
+dataset_path = '../../GNNTextClassification/data/spookyAuthor/spookyAuthor.csv'
+dataSet = pd.read_csv(dataset_path)
 
-def calculate_conditional_letter_frequencies(data, class_labels):
-    letter_counts = {label: np.zeros(26) for label in class_labels}
-    vectorizer = CountVectorizer(analyzer='char')
+# Define classes
+classes = dataSet['author'].unique()
 
-    for label in class_labels:
-        class_texts = data[data['author'] == label]['text']
-        char_counts = vectorizer.fit_transform(class_texts)
-        total_char_counts = np.sum(char_counts, axis=0).A1
-        total_char_counts = total_char_counts.astype(float)
-        total_char_counts /= total_char_counts.sum()
-        total_char_counts /= total_char_counts.sum()
-        letter_counts[label] = total_char_counts
-    return letter_counts
+# Create a list of characters from a-z
+alphabet = list("abcdefghijklmnopqrstuvwxyz")
 
-class_labels = dataSet['author'].unique()
-conditional_letter_frequencies = calculate_conditional_letter_frequencies(dataSet, class_labels)
+# Initialize counters for each class
+eap_letter_count = Counter({char: 0 for char in alphabet})
+hpl_letter_count = Counter({char: 0 for char in alphabet})
+mws_letter_count = Counter({char: 0 for char in alphabet})
+total_letters = {'eap': 0, 'hpl': 0, 'mws': 0}
 
-for label in class_labels:
-    print(f"\nConditional Letter Frequencies for class '{label}':")
-    letters = list('abcdefghijklmnopqrstuvwxyz')
-    frequencies = conditional_letter_frequencies[label]
-    for letter, frequency in zip(letters, frequencies):
-        print(f"{letter}: {frequency:.4f}")
+# Function to update letter counts for a given class
+def update_letter_count(text, author):
+    letter_count = Counter(text.lower())
+    if author == 'EAP':
+        eap_letter_count.update(letter_count)
+        total_letters['eap'] += len(text)
+    elif author == 'HPL':
+        hpl_letter_count.update(letter_count)
+        total_letters['hpl'] += len(text)
+    elif author == 'MWS':
+        mws_letter_count.update(letter_count)
+        total_letters['mws'] += len(text)
 
+# Process each row in the dataset
+for index, row in dataSet.iterrows():
+    update_letter_count(row['text'], row['author'])
+
+# Calculate conditional frequencies for 'pos' class
+eap_letter_freq = {char: count / total_letters['eap'] for char, count in eap_letter_count.items()}
+
+# Calculate conditional frequencies for 'neg' class
+hpl_letter_freq = {char: count / total_letters['hpl'] for char, count in hpl_letter_count.items()}
+
+# Calculate conditional frequencies for 'neg' class
+mws_letter_freq = {char: count / total_letters['mws'] for char, count in mws_letter_count.items()}
+
+# Display the results
+print("Conditional Letter Frequencies for 'eap' class:")
+print(eap_letter_freq)
+
+print("\nConditional Letter Frequencies hpl 'hpl' class:")
+print(hpl_letter_freq)
+
+print("\nConditional Letter Frequencies for 'mws' class:")
+print(mws_letter_freq)
